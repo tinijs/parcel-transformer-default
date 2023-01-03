@@ -1,0 +1,65 @@
+{
+  "name": "@tinijs/parcel-transformer-default",
+  "version": "0.0.1",
+  "description": "A ParcelJS transformer for default TiniJS apps.",
+  "author": "Lam Nhan",
+  "homepage": "https://lamnhan.com",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "src/index.js",
+  "source": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src",
+    "!**/*.ts",
+    "**/*.d.ts"
+  ],
+  "engines": {
+    "node": ">= 12.0.0",
+    "parcel": "^2.8.2"
+  },
+  "scripts": {
+    "compile": "tsc",
+    "build": "npm run compile",
+    "docs": "ayedocs generate",
+    "test": "npm run compile && nyc --cache false mocha test/**/*.js",
+    "coverage": "nyc --cache false report --reporter=text-lcov | coveralls",
+    "lint": "gts lint",
+    "fix": "gts fix"
+  },
+  "keywords": [
+    "node",
+    "module",
+    "parceljs",
+    "tinijs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tinijs/parcel-transformer-default.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tinijs/parcel-transformer-default/issues"
+  },
+  "dependencies": {
+    "@parcel/plugin": "2.8.2",
+    "@parcel/source-map": "^2.1.1",
+    "@parcel/ts-utils": "2.8.2",
+    "@parcel/types": "^2.8.2"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.13",
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.11.8",
+    "chai": "^4.2.0",
+    "coveralls": "^3.1.0",
+    "gts": "^3.0.1",
+    "mocha": "^8.1.3",
+    "nyc": "^15.1.0",
+    "typescript": "^4.0.3"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "files.exclude": {
+    ".deploy/": true,
+    ".nyc_output/": true,
+    ".vscode/": true,
+    "docs/": true,
+    "src/**/*.js": true,
+    "test/**/*.js": true,
+    "src/**/*.d.ts": true,
+    "test/**/*.d.ts": true,
+    "**/*.map": true
+  }
+}
