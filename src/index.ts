@@ -3,6 +3,7 @@ import {loadTSConfig} from '@parcel/ts-utils';
 
 import {transpile} from './lib/transpile';
 import {processSourceMap} from './lib/sourcemap';
+import {processCode} from './lib/builder';
 
 export default new Transformer({
   loadConfig({config, options}) {
@@ -10,7 +11,10 @@ export default new Transformer({
   },
   async transform({asset, config, options}) {
     asset.type = 'js';
-    const code = await asset.getCode();
+    let code = await asset.getCode();
+
+    // processing
+    code = await processCode(code);
 
     // transpile and finalize
     const transpiled = transpile(code, asset, config);

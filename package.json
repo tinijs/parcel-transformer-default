@@ -46,7 +46,8 @@
     "@parcel/plugin": "2.8.2",
     "@parcel/source-map": "^2.1.1",
     "@parcel/ts-utils": "2.8.2",
-    "@parcel/types": "^2.8.2"
+    "@parcel/types": "^2.8.2",
+    "sass": "^1.57.1"
   },
   "peerDependencies": {
     "typescript": ">=4.0.0"
