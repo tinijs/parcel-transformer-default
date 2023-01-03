@@ -3,6 +3,7 @@ import {loadTSConfig} from '@parcel/ts-utils';
 
 import {transpile} from './lib/transpile';
 import {processSourceMap} from './lib/sourcemap';
+import {changeConfigs} from './lib/config';
 import {processCode} from './lib/builder';
 
 export default new Transformer({
@@ -13,7 +14,15 @@ export default new Transformer({
     asset.type = 'js';
     let code = await asset.getCode();
 
-    // processing
+    // configs
+    if (
+      process.env.NODE_ENV !== 'development' &&
+      asset.filePath.indexOf('app/app.ts') !== -1
+    ) {
+      code = changeConfigs(code);
+    }
+
+    // html, css, assets
     code = await processCode(code);
 
     // transpile and finalize
