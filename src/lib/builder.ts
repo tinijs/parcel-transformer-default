@@ -41,23 +41,43 @@ async function doCss(content: string) {
 function doAssets(content: string) {
   const formats = [
     // images
-    'gif',
     'jpe?g',
-    'tiff?',
     'png',
     'webp',
+    'svg',
     'bmp',
+    'gif',
+    'ico',
+    'tiff?',
+    // audios
+    'mp3',
+    'ogg',
+    'aac',
+    'wav',
+    'midi?',
     // videos
     'mp4',
     'webm',
+    'flv',
+    'm3u8',
+    'mpd',
     // fonts
     'woff',
     'woff2',
+    // documents
+    'txt',
+    'md',
+    'pdf',
+    'docx?',
+    'pptx?',
+    'xlsx?',
+    'odt',
   ];
   const lookups = [
     ['src="', '"'],
     ['srcset="', '"'],
     ['href="', '"'],
+    ["url\\('", "'\\)"],
     ["asset\\('", "'\\)"],
   ];
   const validator = new RegExp(`.(${formats.join('|')})`, 'i');
@@ -77,6 +97,10 @@ function doAssets(content: string) {
       if (/(src|srcset|href)/.test(A)) {
         const newA = A.replace('"', '');
         const newB = '';
+        newStr = `${newA}\${${URL}}${newB}`;
+      } else if (/(url)/.test(A)) {
+        const newA = A.replace(/(\\|')/g, '');
+        const newB = ')';
         newStr = `${newA}\${${URL}}${newB}`;
       } else {
         newStr = URL;
