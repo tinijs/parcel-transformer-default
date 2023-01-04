@@ -23,6 +23,7 @@
   "scripts": {
     "compile": "tsc",
     "build": "npm run compile",
+    "deploy": "npm run build && npm publish",
     "docs": "ayedocs generate",
     "test": "npm run compile && nyc --cache false mocha test/**/*.js",
     "coverage": "nyc --cache false report --reporter=text-lcov | coveralls",
