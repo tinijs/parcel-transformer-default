@@ -1,10 +1,5 @@
-import {promisify} from 'util';
 import {resolve} from 'path';
-import {stat, readdir, readFile} from 'fs';
-
-const statAsync = promisify(stat);
-const readdirAsync = promisify(readdir);
-const readFileAsync = promisify(readFile);
+import {exists, readdir, readFile} from 'fs-extra';
 
 interface SoulData {
   native: Record<string, string>;
@@ -16,7 +11,7 @@ export async function loadSoul() {
   // get data
   let result = (global as any).___unistylusSoul;
   if (!result) {
-    if (await statAsync(projectSoulPath)) {
+    if (await exists(projectSoulPath)) {
       result = await loadProjectSoul(projectSoulPath);
     } else {
       result = await load3rdPartySoul();
@@ -45,14 +40,14 @@ async function load3rdPartySoul(): Promise<SoulData> {
 
 async function extractStyles(folderPath: string) {
   const result: Record<string, string> = {};
-  if (await statAsync(folderPath)) {
-    const filePaths = await readdirAsync(folderPath);
+  if (await exists(folderPath)) {
+    const filePaths = await readdir(folderPath);
     for (let i = 0; i < filePaths.length; i++) {
       const filePath = resolve(folderPath, filePaths[i]);
       const fileName = (filePath.replace(/\\/, '/').split('/').pop() as string)
         .split('.')
         .shift() as string;
-      const fileContent = await readFileAsync(filePath);
+      const fileContent = await readFile(filePath);
       result[fileName] = fileContent.toString('utf8');
     }
   }
