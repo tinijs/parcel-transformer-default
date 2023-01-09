@@ -115,9 +115,9 @@ async function doUnistylus(content: string) {
   const htmlContent = htmlMatching[2];
   const tags = extractHTMLTags(htmlContent); // native tags
   const classes = extractHTMLClasses(htmlContent); // custom classes
-  const unistylusClasses = unistylusMatching[2]
-    .split('\n')
-    .map(item => item.trim()); // additional Unistylus classes
+  const unistylusClasses = unistylusMatching[2] // additional Unistylus classes
+    .replace(/\s\s+/g, ' ')
+    .split(' ');
   // construct the style and patch the content,
   const {native, custom} = await loadSoul();
   const nativeStyles = constructNativeStyles(tags, native);
@@ -136,7 +136,7 @@ function extractHTMLTags(htmlContent: string) {
   const tagsMatchingArr = htmlContent.match(/<[a-zA-Z]+(>|.*?[^?]>)/gi);
   if (tagsMatchingArr) {
     for (let i = 0; i < tagsMatchingArr.length; i++) {
-      let [tag] = tagsMatchingArr[i].split(' ');
+      let [tag] = tagsMatchingArr[i].replace(/\s\s+/g, ' ').split(' ');
       tag = tag.replace(/<|>/g, '');
       tags.add(tag);
     }
@@ -149,7 +149,10 @@ function extractHTMLClasses(htmlContent: string) {
   const classesMatchingArr = htmlContent.match(/(class=")([\s\S]*?)(")/g);
   if (classesMatchingArr) {
     for (let i = 0; i < classesMatchingArr.length; i++) {
-      const arr = classesMatchingArr[i].replace(/(class=)|"/g, '').split(' ');
+      const arr = classesMatchingArr[i]
+        .replace(/(class=)|((\$\{)([\s\S]*?)(\}))|(\))|(\})|(")/g, '')
+        .replace(/\s\s+/g, ' ')
+        .split(' ');
       for (let j = 0; j < arr.length; j++) {
         classes.add(arr[j]);
       }
