@@ -137,7 +137,7 @@ function extractHTMLTags(htmlContent: string) {
   if (tagsMatchingArr) {
     for (let i = 0; i < tagsMatchingArr.length; i++) {
       let [tag] = tagsMatchingArr[i].split(' ');
-      tag = tag.replace('<', '');
+      tag = tag.replace(/<|>/g, '');
       tags.add(tag);
     }
   }
@@ -149,9 +149,7 @@ function extractHTMLClasses(htmlContent: string) {
   const classesMatchingArr = htmlContent.match(/(class=")([\s\S]*?)(")/g);
   if (classesMatchingArr) {
     for (let i = 0; i < classesMatchingArr.length; i++) {
-      const arr = classesMatchingArr[i]
-        .replace(/(class=")|(")/g, '')
-        .split(' ');
+      const arr = classesMatchingArr[i].replace(/(class=)|"/g, '').split(' ');
       for (let j = 0; j < arr.length; j++) {
         classes.add(arr[j]);
       }
@@ -169,8 +167,7 @@ function constructNativeStyles(tags: string[], native: Record<string, string>) {
   }
   // by tag
   for (let i = 0; i < tags.length; i++) {
-    const tag = tags[i];
-    const byTag = native[tag];
+    const byTag = native[tags[i]];
     if (byTag) {
       resultArr.push(byTag);
     }
@@ -186,8 +183,7 @@ function constructCustomStyles(
   const resultArr = [] as string[];
   // by class
   for (let i = 0; i < classes.length; i++) {
-    const cls = classes[i];
-    const byClass = custom[cls];
+    const byClass = custom[classes[i]];
     if (byClass) {
       resultArr.push(byClass);
     }
