@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {Transformer} from '@parcel/plugin';
 import {loadTSConfig} from '@parcel/ts-utils';
 
@@ -16,13 +17,19 @@ function isAppTS(filePath: string) {
 }
 
 export default new Transformer({
-  loadConfig({config, options}) {
-    return loadTSConfig(config, options);
+  async loadConfig({config, options}) {
+    const tsConfig = await loadTSConfig(config, options);
+    const {contents: tiniConfig} = (await config.getConfig([
+      'tini.config.json',
+    ])) as any;
+    return {tsConfig, tiniConfig};
   },
   async transform({asset, config, options}) {
+    const {tsConfig, tiniConfig} = config as any;
     const isDev = isDevEnv(process.env.NODE_ENV);
     const isMain = isAppTS(asset.filePath);
 
+    // the asset
     asset.type = 'js';
     let code = await asset.getCode();
 
@@ -35,12 +42,12 @@ export default new Transformer({
     code = await processCode(code);
 
     // pwa
-    if (isMain) {
-      code = await injectPWA(code);
+    if (tiniConfig.pwa && isMain) {
+      code = injectPWA(code);
     }
 
     // transpile and finalize
-    const transpiled = transpile(code, asset, config);
+    const transpiled = transpile(code, asset, tsConfig);
     const {outputText, map} = processSourceMap(transpiled, options);
 
     // result
