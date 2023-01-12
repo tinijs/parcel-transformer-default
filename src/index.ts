@@ -8,11 +8,13 @@ import {changeConfigs} from './lib/config';
 import {processCode} from './lib/builder';
 import {injectPWA} from './lib/pwa';
 
+const CONFIG_PATH = 'tini.config.json';
+
 function isDevEnv(nodeEnv?: string) {
-  return nodeEnv !== 'development';
+  return nodeEnv === 'development';
 }
 
-function isAppTS(filePath: string) {
+function isAppEntry(filePath: string) {
   return filePath.indexOf('app/app.ts') !== -1;
 }
 
@@ -20,21 +22,21 @@ export default new Transformer({
   async loadConfig({config, options}) {
     const tsConfig = await loadTSConfig(config, options);
     const {contents: tiniConfig} = (await config.getConfig([
-      'tini.config.json',
+      CONFIG_PATH,
     ])) as any;
     return {tsConfig, tiniConfig};
   },
   async transform({asset, config, options}) {
     const {tsConfig, tiniConfig} = config as any;
     const isDev = isDevEnv(process.env.NODE_ENV);
-    const isMain = isAppTS(asset.filePath);
+    const isMain = isAppEntry(asset.filePath);
 
     // the asset
     asset.type = 'js';
     let code = await asset.getCode();
 
     // configs
-    if (isDev && isMain) {
+    if (!isDev) {
       code = changeConfigs(code);
     }
 

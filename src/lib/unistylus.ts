@@ -7,12 +7,16 @@ interface SoulData {
 }
 
 export async function loadSoul() {
-  const projectSoulPath = resolve('styles', 'unistylus');
+  const projectNativePath = resolve('styles', 'native');
+  const projectCustomPath = resolve('styles', 'custom');
   // get data
   let result = (global as any).___unistylusSoul;
   if (!result) {
-    if (await exists(projectSoulPath)) {
-      result = await loadProjectSoul(projectSoulPath);
+    if (
+      (await exists(projectNativePath)) ||
+      (await exists(projectCustomPath))
+    ) {
+      result = await loadProjectSoul(projectNativePath, projectCustomPath);
     } else {
       result = await load3rdPartySoul();
     }
@@ -21,9 +25,10 @@ export async function loadSoul() {
   return ((global as any).___unistylusSoul = result) as SoulData;
 }
 
-async function loadProjectSoul(soulPath: string): Promise<SoulData> {
-  const nativePath = resolve(soulPath, 'native');
-  const customPath = resolve(soulPath, 'custom');
+async function loadProjectSoul(
+  nativePath: string,
+  customPath: string
+): Promise<SoulData> {
   return {
     native: await extractStyles(nativePath),
     custom: await extractStyles(customPath),

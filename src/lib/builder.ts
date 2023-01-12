@@ -22,16 +22,23 @@ function doHtml(content: string) {
 }
 
 async function doCss(content: string) {
-  const stylesMatchingArr = content.match(/(css`)([\s\S]*?)(`)/g);
+  const stylesMatchingArr = content.match(/(css`)([\s\S]*?)(`,|`;)/g);
   if (stylesMatchingArr) {
     for (let i = 0; i < stylesMatchingArr.length; i++) {
       const styleMatching = stylesMatchingArr[i];
       let originalStyles = styleMatching.replace('css`', '');
-      originalStyles = originalStyles.substring(0, originalStyles.length - 1);
+      originalStyles = originalStyles.substring(0, originalStyles.length - 2);
       const {css: compiledStyles} = await compileStringAsync(originalStyles);
       content = content.replace(originalStyles, compiledStyles);
     }
   }
+  // has styling
+  const stylingStr = 'styling() {';
+  const hasStyling = content.indexOf(stylingStr) !== -1;
+  if (hasStyling) {
+    content = content.replace(stylingStr, 'static get styles() {');
+  }
+  // result
   return content;
 }
 
@@ -109,24 +116,25 @@ function doAssets(content: string) {
 }
 
 async function doUnistylus(content: string) {
-  const htmlMatching = content.match(/(html`)([\s\S]*?)(`)/);
+  const htmlMatchingArr = content.match(/(html`)([\s\S]*?)(`;)/g);
   const unistylusMatching = content.match(/(unistylus`)([\s\S]*?)(`)/);
-  if (!htmlMatching || !unistylusMatching) return content;
-  const htmlContent = htmlMatching[2];
-  const tags = extractHTMLTags(htmlContent); // native tags
-  const classes = extractHTMLClasses(htmlContent); // custom classes
-  const unistylusClasses = unistylusMatching[2] // additional Unistylus classes
-    .replace(/\s\s+/g, ' ')
-    .split(' ');
+  if (!htmlMatchingArr || !unistylusMatching) return content;
+  const tags = [] as string[];
+  const classes = [] as string[];
+  for (let i = 0; i < htmlMatchingArr.length; i++) {
+    const htmlMatching = htmlMatchingArr[i];
+    tags.push(...extractHTMLTags(htmlMatching)); // native tags
+    classes.push(...extractHTMLClasses(htmlMatching)); // custom classes
+  }
+  classes.push(...unistylusMatching[2].replace(/\s\s+/g, ' ').split(' ')); // additional Unistylus classes
   // construct the style and patch the content,
   const {native, custom} = await loadSoul();
   const nativeStyles = constructNativeStyles(tags, native);
-  const customStyles = constructCustomStyles(
-    [...classes, ...unistylusClasses],
-    custom
+  const customStyles = constructCustomStyles(classes, custom);
+  content = content.replace(
+    unistylusMatching[0],
+    `css\`${nativeStyles + '\n' + customStyles}\`,`
   );
-  const styles = `${nativeStyles}\n${customStyles}`;
-  content = content.replace(unistylusMatching[0], `css\`${styles}\`,`);
   // result
   return content;
 }
