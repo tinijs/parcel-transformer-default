@@ -83,7 +83,7 @@ function doAssets(content: string) {
     ["url\\('", "'\\)"],
     ["asset\\('", "'\\)"],
   ];
-  const validator = new RegExp(`.(${formats.join('|')})`, 'i');
+  const validator = new RegExp(`\\.(${formats.join('|')})`, 'i');
   for (let i = 0; i < lookups.length; i++) {
     const [A, B] = lookups[i];
     const matchingArr = (
@@ -118,7 +118,13 @@ function doAssets(content: string) {
 async function doUnistylus(content: string) {
   const htmlMatchingArr = content.match(/(html`)([\s\S]*?)(`;)/g);
   const unistylusMatching = content.match(/(unistylus`)([\s\S]*?)(`)/);
+  const hasCss = content.match(/(css`)([\s\S]*?)(`)/);
   if (!htmlMatchingArr || !unistylusMatching) return content;
+  // import css()
+  if (!hasCss && unistylusMatching) {
+    content = content.replace('unistylus', 'css');
+  }
+  // extract tags and classes
   const tags = [] as string[];
   const classes = [] as string[];
   for (let i = 0; i < htmlMatchingArr.length; i++) {
@@ -133,7 +139,7 @@ async function doUnistylus(content: string) {
   const customStyles = constructCustomStyles(classes, custom);
   content = content.replace(
     unistylusMatching[0],
-    `css\`${nativeStyles + '\n' + customStyles}\`,`
+    `css\`${nativeStyles + '\n' + customStyles}\``
   );
   // result
   return content;
