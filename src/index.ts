@@ -2,6 +2,7 @@
 import {Transformer} from '@parcel/plugin';
 import {loadTSConfig} from '@parcel/ts-utils';
 
+import {TiniConfig} from './lib/types';
 import {transpile} from './lib/transpile';
 import {processSourceMap} from './lib/sourcemap';
 import {changeConfigs} from './lib/config';
@@ -27,7 +28,10 @@ export default new Transformer({
     return {tsConfig, tiniConfig};
   },
   async transform({asset, config, options}) {
-    const {tsConfig, tiniConfig} = config as any;
+    const {tsConfig, tiniConfig} = config as {
+      tsConfig: any;
+      tiniConfig: TiniConfig;
+    };
     const isDev = isDevEnv(process.env.NODE_ENV);
     const isMain = isAppEntry(asset.filePath);
 
@@ -41,7 +45,7 @@ export default new Transformer({
     }
 
     // html, css, assets
-    code = await processCode(code);
+    code = await processCode(code, tiniConfig);
 
     // pwa
     if (tiniConfig.pwa && isMain) {

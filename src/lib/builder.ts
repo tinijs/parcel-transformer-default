@@ -1,10 +1,12 @@
 import {compileStringAsync} from 'sass';
+
+import {TiniConfig} from './types';
 import {loadSoul} from './unistylus';
 
-export async function processCode(content: string) {
+export async function processCode(content: string, tiniConfig: TiniConfig) {
   content = doAssets(content);
   content = doHtml(content);
-  content = await doUnistylus(content);
+  content = await doUnistylus(content, tiniConfig);
   content = await doCss(content);
   return content;
 }
@@ -115,28 +117,36 @@ function doAssets(content: string) {
   return content;
 }
 
-async function doUnistylus(content: string) {
+async function doUnistylus(content: string, tiniConfig: TiniConfig) {
   const htmlMatchingArr = content.match(/(html`)([\s\S]*?)(`;)/g);
   const unistylusMatching = content.match(/(unistylus`)([\s\S]*?)(`)/);
-  const hasCss = content.match(/(css`)([\s\S]*?)(`)/);
   if (!htmlMatchingArr || !unistylusMatching) return content;
   // import css()
+  const hasCss = content.match(/(css`)([\s\S]*?)(`)/);
   if (!hasCss && unistylusMatching) {
     content = content.replace('unistylus', 'css');
   }
   // extract tags and classes
   const tags = [] as string[];
   const classes = [] as string[];
+  // class="..."
   for (let i = 0; i < htmlMatchingArr.length; i++) {
     const htmlMatching = htmlMatchingArr[i];
     tags.push(...extractHTMLTags(htmlMatching)); // native tags
     classes.push(...extractHTMLClasses(htmlMatching)); // custom classes
   }
-  classes.push(...unistylusMatching[2].replace(/\s\s+/g, ' ').split(' ')); // additional Unistylus classes
+  // ${classMap(...)}
+  classes.push(...extractClassMapClasses(content));
+  // additional Unistylus classes
+  classes.push(...unistylusMatching[2].replace(/\s\s+/g, ' ').split(' '));
+  // filter blank
   // construct the style and patch the content,
-  const {native, custom} = await loadSoul();
+  const {native, custom} = await loadSoul(tiniConfig);
   const nativeStyles = constructNativeStyles(tags, native);
-  const customStyles = constructCustomStyles(classes, custom);
+  const customStyles = constructCustomStyles(
+    classes.filter(item => !!item),
+    custom
+  );
   content = content.replace(
     unistylusMatching[0],
     `css\`${nativeStyles + '\n' + customStyles}\``
@@ -170,6 +180,28 @@ function extractHTMLClasses(htmlContent: string) {
       for (let j = 0; j < arr.length; j++) {
         classes.add(arr[j]);
       }
+    }
+  }
+  return Array.from(classes);
+}
+
+function extractClassMapClasses(content: string) {
+  const classMapMatchingArr = content.match(
+    /(\$\{classMap\(\{)([\s\S]*?)(\}\)\})/g
+  );
+  if (!classMapMatchingArr) return [];
+  const classes = new Set<string>();
+  for (let i = 0; i < classMapMatchingArr.length; i++) {
+    const classMapMatching = classMapMatchingArr[i];
+    let arr = classMapMatching
+      .replace(/\s\s+/g, '')
+      .replace(/(:)([\s\S]*?)(,)/g, '|')
+      .replace(/(\n|'|"|`|\$|\(|\)|\{|\}|classMap)/g, '')
+      .split('|')
+      .map(item => item.trim());
+    arr ||= [];
+    for (let j = 0; j < arr.length; j++) {
+      classes.add(arr[j]);
     }
   }
   return Array.from(classes);
