@@ -13,11 +13,15 @@ export async function processCode(content: string, tiniConfig: TiniConfig) {
 
 function doHtml(content: string) {
   const hasRender = content.indexOf('render() {') !== -1;
-  const templateMatching = content.match(/(template = html`)([\s\S]*?)(`;)/);
+  const templateMatching = content.match(/(#?template = html`)([\s\S]*?)(`;)/);
   if (!hasRender && templateMatching) {
     const matchedTemplate = templateMatching[0];
+    const templateStr = 'template =';
+    const renderStr = 'render() {\n  return';
     const newTemplate =
-      matchedTemplate.replace('template =', 'render() {\n  return') + '}';
+      matchedTemplate
+        .replace(`#${templateStr}`, renderStr)
+        .replace(templateStr, renderStr) + '}';
     content = content.replace(matchedTemplate, newTemplate);
   }
   return content;
@@ -33,6 +37,12 @@ async function doCss(content: string) {
       const {css: compiledStyles} = await compileStringAsync(originalStyles);
       content = content.replace(originalStyles, compiledStyles);
     }
+  }
+  // has #styles
+  const privateStylesStr = '#styles =';
+  const hasPrivateStyles = content.indexOf(privateStylesStr) !== -1;
+  if (hasPrivateStyles) {
+    content = content.replace(privateStylesStr, 'static styles = ');
   }
   // has styling
   const stylingStr = 'styling() {';
