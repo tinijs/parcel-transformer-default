@@ -45,7 +45,7 @@ export default new Transformer({
     }
 
     // html, css, assets
-    code = await processCode(code, tiniConfig);
+    code = await processCode(code, tiniConfig, isDev);
 
     // pwa
     if (tiniConfig.pwa && isMain) {

@@ -1,56 +1,66 @@
 import {compileStringAsync} from 'sass';
+import {minify} from 'html-minifier-terser';
 
 import {TiniConfig} from './types';
 import {loadSoul} from './unistylus';
 
-export async function processCode(content: string, tiniConfig: TiniConfig) {
+export async function processCode(
+  content: string,
+  tiniConfig: TiniConfig,
+  isDev: boolean
+) {
   content = doAssets(content);
-  content = doHtml(content);
+  content = await doHtml(content, isDev);
   content = await doUnistylus(content, tiniConfig);
-  content = await doCss(content);
+  content = await doCss(content, isDev);
   return content;
 }
 
-function doHtml(content: string) {
-  const hasRender = content.indexOf('render() {') !== -1;
-  const templateMatching = content.match(/(#?template = html`)([\s\S]*?)(`;)/);
-  if (!hasRender && templateMatching) {
-    const matchedTemplate = templateMatching[0];
-    const templateStr = 'template =';
-    const renderStr = 'render() {\n  return';
-    const newTemplate =
-      matchedTemplate
-        .replace(`#${templateStr}`, renderStr)
-        .replace(templateStr, renderStr) + '}';
-    content = content.replace(matchedTemplate, newTemplate);
-  }
-  return content;
+async function doHtml(content: string, isDev: boolean) {
+  const templateMatching = content.match(/(return html`)([\s\S]*?)(`;)/);
+  // dev or no html``
+  if (isDev || !templateMatching) return content;
+  // minify template
+  const matchedTemplate = templateMatching[2];
+  const minifiedTemplate = await minify(matchedTemplate, {
+    minifyCSS: true,
+    minifyJS: true,
+    removeComments: true,
+    removeEmptyAttributes: true,
+    removeRedundantAttributes: true,
+  });
+  return content.replace(matchedTemplate, minifiedTemplate);
 }
 
-async function doCss(content: string) {
+async function doCss(content: string, isDev: boolean) {
   const stylesMatchingArr = content.match(/(css`)([\s\S]*?)(`,|`;)/g);
-  if (stylesMatchingArr) {
-    for (let i = 0; i < stylesMatchingArr.length; i++) {
-      const styleMatching = stylesMatchingArr[i];
-      let originalStyles = styleMatching.replace('css`', '');
-      originalStyles = originalStyles.substring(0, originalStyles.length - 2);
-      const {css: compiledStyles} = await compileStringAsync(originalStyles);
-      content = content.replace(originalStyles, compiledStyles);
+  // no css``
+  if (!stylesMatchingArr) return content;
+  // compile scss
+  for (let i = 0; i < stylesMatchingArr.length; i++) {
+    const styleMatching = stylesMatchingArr[i];
+    // original
+    let originalStyles = styleMatching.replace('css`', '');
+    originalStyles = originalStyles.substring(0, originalStyles.length - 2);
+    // compile
+    let compiledStyles: string;
+    try {
+      const compiled = await compileStringAsync(originalStyles, {
+        style: isDev ? 'expanded' : 'compressed',
+      });
+      compiledStyles = compiled.css;
+    } catch (err) {
+      compiledStyles = isDev
+        ? originalStyles
+        : (
+            await minify(`<style>${originalStyles}</style>`, {
+              minifyCSS: true,
+            })
+          ).replace(/<\/?style>/g, '');
     }
+    // replacing
+    content = content.replace(originalStyles, compiledStyles);
   }
-  // has #styles
-  const privateStylesStr = '#styles =';
-  const hasPrivateStyles = content.indexOf(privateStylesStr) !== -1;
-  if (hasPrivateStyles) {
-    content = content.replace(privateStylesStr, 'static styles = ');
-  }
-  // has styling
-  const stylingStr = 'styling() {';
-  const hasStyling = content.indexOf(stylingStr) !== -1;
-  if (hasStyling) {
-    content = content.replace(stylingStr, 'static get styles() {');
-  }
-  // result
   return content;
 }
 

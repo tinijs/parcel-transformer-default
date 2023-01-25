@@ -46,6 +46,7 @@
     "@parcel/ts-utils": "^2.8.2",
     "@parcel/types": "^2.8.2",
     "fs-extra": "^11.1.0",
+    "html-minifier-terser": "^7.1.0",
     "recursive-readdir": "^2.2.3",
     "sass": "^1.57.1"
   },
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
+    "@types/html-minifier-terser": "^7.0.0",
     "@types/node": "^18.11.18",
     "@types/recursive-readdir": "^2.2.1",
     "gts": "^4.0.0",
