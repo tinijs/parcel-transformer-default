@@ -1,5 +1,5 @@
 import {compileStringAsync} from 'sass';
-import {minify} from 'html-minifier-terser';
+import {minifyHTMLLiterals} from 'minify-html-literals';
 
 import {TiniConfig} from './types';
 import {loadSoul} from './unistylus';
@@ -10,25 +10,26 @@ export async function processCode(
   isDev: boolean
 ) {
   content = doAssets(content);
-  content = await doHtml(content, isDev);
+  content = doHtml(content, isDev);
   content = await doUnistylus(content, tiniConfig);
   content = await doCss(content, isDev);
   return content;
 }
 
-async function doHtml(content: string, isDev: boolean) {
+function doHtml(content: string, isDev: boolean) {
   const templateMatching = content.match(/(return html`)([\s\S]*?)(`;)/);
-  // dev or no html``
+  // dev or no return html`...`
   if (isDev || !templateMatching) return content;
-  // minify template
-  const matchedTemplate = templateMatching[2];
-  const minifiedTemplate = await minify(matchedTemplate, {
-    minifyCSS: true,
-    minifyJS: true,
-    removeComments: true,
-    removeEmptyAttributes: true,
-    removeRedundantAttributes: true,
-  });
+  // minify
+  const matchedTemplate = templateMatching[0];
+  let minifiedTemplate: string;
+  try {
+    const result = minifyHTMLLiterals(matchedTemplate);
+    if (!result) throw new Error('minifyHTMLLiterals() failed.');
+    minifiedTemplate = result.code;
+  } catch (err) {
+    minifiedTemplate = matchedTemplate;
+  }
   return content.replace(matchedTemplate, minifiedTemplate);
 }
 
@@ -45,18 +46,15 @@ async function doCss(content: string, isDev: boolean) {
     // compile
     let compiledStyles: string;
     try {
-      const compiled = await compileStringAsync(originalStyles, {
-        style: isDev ? 'expanded' : 'compressed',
-      });
-      compiledStyles = compiled.css;
+      compiledStyles = (
+        await compileStringAsync(originalStyles, {
+          style: isDev ? 'expanded' : 'compressed',
+        })
+      ).css;
     } catch (err) {
       compiledStyles = isDev
         ? originalStyles
-        : (
-            await minify(`<style>${originalStyles}</style>`, {
-              minifyCSS: true,
-            })
-          ).replace(/<\/?style>/g, '');
+        : originalStyles.replace(/(?:\r\n|\r|\n)/g, '').replace(/\s\s+/g, ' ');
     }
     // replacing
     content = content.replace(originalStyles, compiledStyles);
