@@ -32,6 +32,7 @@ export async function injectAutoDependencies(
   assetPath: string
 ) {
   const typesDef = await loadTypesDef();
+  const statesDef = await loadStatesDef();
   const dependencyDef = await loadDependencyDefs();
   const isApp = assetPath.indexOf(`${APP_DIR}/`) !== -1;
   const isConst = assetPath.indexOf(`${CONSTS_DIR}/`) !== -1;
@@ -44,6 +45,16 @@ export async function injectAutoDependencies(
       `import {${typesDef.types.map(item => item[0]).join(',')}} from '${
         isApp ? '.' : '..'
       }/${!isApp ? typesDef.path : typesDef.path.replace(`${APP_DIR}/`, '')}';`
+    );
+  }
+  // states
+  if (statesDef.types?.length) {
+    autoDependenciesArr.push(
+      `import {${statesDef.types.map(item => item[0]).join(',')}} from '${
+        isApp ? '.' : '..'
+      }/${
+        !isApp ? statesDef.path : statesDef.path.replace(`${APP_DIR}/`, '')
+      }';`
     );
   }
   // cosnt
@@ -272,6 +283,7 @@ function extractCustomHTMLTags(content: string, componentPrefix = 'app') {
 
 async function buildDependenciesDTSContent() {
   const typesDef = await loadTypesDef();
+  const statesDef = await loadStatesDef();
   const dependencyDef = await loadDependencyDefs();
   const declares = [] as string[];
   const imports = [] as string[];
@@ -287,6 +299,19 @@ async function buildDependenciesDTSContent() {
       );
     });
     imports.push(`import {${imps.join(', ')}} from '../${typesDef.path}';`);
+  }
+  // states
+  if (statesDef.types?.length) {
+    const imps = [] as string[];
+    statesDef.types.forEach(item => {
+      const [member, generics = ''] = item;
+      const importedMember = `${member}_`;
+      imps.push(`${member} as ${importedMember}`);
+      declares.push(
+        `  type ${member}${generics} = ${importedMember}${generics};`
+      );
+    });
+    imports.push(`import {${imps.join(', ')}} from '../${statesDef.path}';`);
   }
   // cosnt
   const constDefs = dependencyDef.constDefs;
@@ -355,6 +380,12 @@ async function loadTypesDef() {
   }
   const path = `${APP_DIR}/types`;
   const types = Array.from(typesTSExportsSet);
+  return {path, types};
+}
+
+async function loadStatesDef() {
+  const path = `${APP_DIR}/states`;
+  const types = [['States'], ['Store']];
   return {path, types};
 }
 
