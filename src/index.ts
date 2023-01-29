@@ -22,9 +22,8 @@ function isAppEntry(filePath: string) {
 export default new Transformer({
   async loadConfig({config, options}) {
     const tsConfig = await loadTSConfig(config, options);
-    const {contents: tiniConfig} = (await config.getConfig([
-      CONFIG_PATH,
-    ])) as any;
+    const configs = await config.getConfig([CONFIG_PATH]);
+    const tiniConfig = configs?.contents || {};
     return {tsConfig, tiniConfig};
   },
   async transform({asset, config, options}) {
