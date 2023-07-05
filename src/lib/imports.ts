@@ -95,12 +95,12 @@ export async function injectAutoComponents(
   tiniConfig: TiniConfig
 ) {
   const prefix = tiniConfig.componentPrefix;
-  const isComponent = assetPath.indexOf(`${COMPONENTS_DIR}/`) !== -1;
+  const isAssetAComponent = assetPath.indexOf(`${COMPONENTS_DIR}/`) === -1;
   const customTags = extractCustomHTMLTags(content, prefix);
   const autoComponents = customTags
     .map(tag => {
       const name = tag.replace(`${prefix}-`, '');
-      return `import '${isComponent ? '.' : `../${COMPONENTS_DIR}`}/${name}';`;
+      return `import '${isAssetAComponent ? '.' : `../${COMPONENTS_DIR}`}/${name}';`;
     })
     .filter(statement => content.indexOf(statement) === -1)
     .join('\n');
