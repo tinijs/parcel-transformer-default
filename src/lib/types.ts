@@ -1,5 +1,6 @@
 export interface TiniConfig {
-  out?: string;
-  pwa?: Record<string, unknown>;
-  unistylus?: string;
+  out: string;
+  componentPrefix: string;
+  pwa: Record<string, unknown>;
+  unistylus: string;
 }

@@ -139,11 +139,6 @@ async function doUnistylus(content: string, tiniConfig: TiniConfig) {
   const htmlMatchingArr = content.match(/(html`)([\s\S]*?)(`;)/g);
   const unistylusMatching = content.match(/(unistylus`)([\s\S]*?)(`)/);
   if (!htmlMatchingArr || !unistylusMatching) return content;
-  // import css()
-  const hasCss = content.match(/(css`)([\s\S]*?)(`)/);
-  if (!hasCss && unistylusMatching) {
-    content = content.replace('unistylus', 'css');
-  }
   // extract tags and classes
   const tags = [] as string[];
   const classes = [] as string[];

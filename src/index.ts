@@ -8,6 +8,12 @@ import {processSourceMap} from './lib/sourcemap';
 import {changeConfigs} from './lib/config';
 import {processCode} from './lib/builder';
 import {injectPWA} from './lib/pwa';
+import {
+  injectAutoComponents,
+  injectAutoDependencies,
+  injectAutoImports,
+  outputDTSFiles,
+} from './lib/imports';
 
 const CONFIG_PATH = 'tini.config.json';
 
@@ -23,7 +29,13 @@ export default new Transformer({
   async loadConfig({config, options}) {
     const tsConfig = await loadTSConfig(config, options);
     const configs = await config.getConfig([CONFIG_PATH]);
-    const tiniConfig = configs?.contents || {};
+    const tiniConfig = {
+      out: 'www',
+      componentPrefix: 'app',
+      pwa: {},
+      unistylus: '',
+      ...((configs as any)?.contents || {}),
+    };
     return {tsConfig, tiniConfig};
   },
   async transform({asset, config, options}) {
@@ -47,13 +59,21 @@ export default new Transformer({
     code = await processCode(code, tiniConfig, isDev);
 
     // pwa
-    if (tiniConfig.pwa && isMain) {
+    if (Object.keys(tiniConfig.pwa).length && isMain) {
       code = injectPWA(code);
     }
+
+    // auto imports
+    code = await injectAutoComponents(code, asset.filePath, tiniConfig);
+    code = await injectAutoDependencies(code, asset.filePath);
+    code = await injectAutoImports(code);
 
     // transpile and finalize
     const transpiled = transpile(code, asset, tsConfig);
     const {outputText, map} = processSourceMap(transpiled, options);
+
+    // output d.ts
+    await outputDTSFiles(tiniConfig);
 
     // result
     return [
