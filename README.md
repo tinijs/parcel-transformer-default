@@ -1,5 +1,7 @@
 # TiniJS Default Transformer
 
+:x: DEPRICATED, will move functions to the CLI.
+
 A ParcelJS transformer for default TiniJS apps.
 
 ## Install & usage
